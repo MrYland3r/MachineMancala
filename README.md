@@ -25,7 +25,6 @@ Afterwards, install the following python libraries: (update over time)
 
 Created by:
 
-<a href= "https://github.com/MrYland3r/MachineMancala/graphs/contributors"> <img src= "https://contrib.rocks/image?repo=MrYland3r/MachineMancala" /></a>
 
 ## Acknowledgements
 
