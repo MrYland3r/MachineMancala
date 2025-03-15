@@ -1,8 +1,7 @@
 """This is for sarsa model"""
 import numpy as np 
 import random
-
-from mancala import getNewBoard, displayBoard, askForPlayerMove, makeMove, checkForWinner
+from mancala import getNewBoard, displayBoard, askForPlayerMove, makeMove, checkForWinner, PLAYER_1_PITS, PLAYER_2_PITS
 
 class SARSAAgent:
     def __init__(self, alpha=0.3, gamma=0.95, epsilon=0.1):
@@ -18,31 +17,32 @@ class SARSAAgent:
         if random.random() < self.epsilon:
             return random.choice(possible_input)
         else:
-            q_values = [self.q_table.get((state, actions), 0) for action in possible_input]
+            q_values = [self.q_table.get((state, action), 0) for action in possible_input]
             return possible_input[np.argmax(q_values)]
     
     def reset_ep(self):
-        state=getNewBoard()
-        action=self.epsilon_greedy(state)
-        return state, action
+        board = getNewBoard()
+        state = tuple(board.values())
+        action=self.epsilon_greedy(state, PLAYER_1_PITS)
+        return board, state, action
         
     def train(self, episodes):
         for episode in range(episodes):
-            state, action = self.reset_ep()
+            board, state, action = self.reset_ep()
             player_turn = '1'
             done = False
             rewards = 0
 
             while not done:
-                state = tuple(board.values())
-                possible_input = PLYAER_1_PITS if player_turn == '1' else PLAYER_2_PITS
+                possible_input = PLAYER_1_PITS if player_turn == '1' else PLAYER_2_PITS
 
                 action = self.epsilon_greedy(state, possible_input)
 
-                next_board = makeMove(board.copy(), player_turn, action)
+                next_player_turn, next_board = makeMove(board.copy(), player_turn, action)
                 next_state = tuple(next_board.values())
                 reward = 0 
                 winner = checkForWinner(next_board)
+
                 if winner == '1' or winner == '2':
                     reward = 1 if winner == player_turn else -1
                     done = True
@@ -50,12 +50,22 @@ class SARSAAgent:
                     reward = 0 
                     done = True
 
-                next_move = self..episolon_greedy(next_state)
-                self.q_table[(state, action)] = self.q_table.get((state, action), 0) + self.alpha * (
-                    reward + self.gamma * self.q_table.get((next_state, next_action), 0) - self.q_table.get((state, action), 0)
-                )
+                next_action = self.epsilon_greedy(next_state, PLAYER_1_PITS if player_turn == '2' else PLAYER_2_PITS)
+                q_value = self.q_table.get((state, action), 0)
+                next_q_value = self.q_table.get((next_state, next_action), 0)
+                new_q_value = q_value + self.alpha * (reward + self.gamma * next_q_value - q_value)
 
+                self.q_table[(state, action)] = new_q_value
+                board = next_board
                 state = next_state
-                action = next_action 
+                action = next_action
+                player_turn = next_player_turn
 
+                rewards += reward
+
+            print(f"Episode {episode+1}, Reward: {rewards}")
+
+if __name__ == "__main__":
+    sarsa_agent = SARSAAgent()
+    sarsa_agent.train(1000)
 
