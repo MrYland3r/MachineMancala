@@ -12,8 +12,7 @@ class SARSAAgent:
         self.q_table = self.initialize_q_table()
 
     def initialize_q_table(self):
-        """not sure how to implement lol"""
-        return
+        return {}
 
     def epsilon_greedy(self, state, possible_input):
         if random.random() < self.epsilon:
@@ -21,10 +20,15 @@ class SARSAAgent:
         else:
             q_values = [self.q_table.get((state, actions), 0) for action in possible_input]
             return possible_input[np.argmax(q_values)]
-
+    
+    def reset_ep(self):
+        state=getNewBoard()
+        action=self.epsilon_greedy(state)
+        return state, action
+        
     def train(self, episodes):
         for episode in range(episodes):
-            board = getNewBoard()
+            state, action = self.reset_ep()
             player_turn = '1'
             done = False
             rewards = 0
@@ -45,5 +49,13 @@ class SARSAAgent:
                 elif winner == 'tie':
                     reward = 0 
                     done = True
+
+                next_move = self..episolon_greedy(next_state)
+                self.q_table[(state, action)] = self.q_table.get((state, action), 0) + self.alpha * (
+                    reward + self.gamma * self.q_table.get((next_state, next_action), 0) - self.q_table.get((state, action), 0)
+                )
+
+                state = next_state
+                action = next_action 
 
 
