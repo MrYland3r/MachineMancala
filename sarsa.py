@@ -2,7 +2,6 @@ import numpy as np
 import random
 import time
 import pickle
-import matplotlib.pyplot as plt
 from mancala import getNewBoard, makeMove, checkForWinner, PLAYER_1_PITS, PLAYER_2_PITS, OPPOSITE_PIT
 
 
@@ -65,19 +64,10 @@ class SARSAAgent:
         with open(self.q_table_file, 'wb') as f:
             pickle.dump(self.q_table, f)
 
-    def plot_stats(self):
-        plt.plot(self.stats['win_rates'])
-        plt.title('Win Rate Over Episodes')
-        plt.xlabel('Episode')
-        plt.ylabel('Win Rate')
-        plt.grid(True)
-        plt.show()
-
-    def train(self, episodes=1000):
+    def train(self, episodes):
         wins = 0
         epsilon_decay = 0.9995
         epsilon_min = 0.01
-        start_time = time.time()
 
         for ep in range(episodes):
             ep_start = time.time()
@@ -188,42 +178,7 @@ class SARSAAgent:
             print(f"Ep {ep+1} | Reward: {total_reward:.2f} | Steps: {steps} | Win Rate: {wins / (ep + 1):.2f} | Time: {ep_end - ep_start:.2f}s")
 
         self.save_q_table()
-        self.plot_stats()
-
-    def evaluate(self, games=100):
-        old_epsilon = self.epsilon
-        self.epsilon = 0
-        wins = 0
-
-        for i in range(games):
-            board, state = self.reset_game()
-            player_turn = '1'
-            done = False
-
-            while not done:
-                if player_turn == '1':
-                    valid_moves = [p for p in PLAYER_1_PITS if board[p] > 0]
-                    if not valid_moves:
-                        break
-                    action = self.epsilon_greedy(state, valid_moves)
-                    player_turn, board = makeMove(board.copy(), '1', action)
-                    state = self.get_state(board)
-                else:
-                    valid_moves = [p for p in PLAYER_2_PITS if board[p] > 0]
-                    if not valid_moves:
-                        break
-                    move = self.opponent_move(board, PLAYER_2_PITS)
-                    player_turn, board = makeMove(board, '2', move)
-
-                winner = checkForWinner(board)
-                if winner != 'no winner':
-                    if winner == '1':
-                        wins += 1
-                    break
-
-        self.epsilon = old_epsilon
 
 if __name__ == "__main__":
     agent = SARSAAgent(use_greedy_opponent=True)
-    agent.train(1000)
-    agent.evaluate(100)
+    agent.train(8000)
