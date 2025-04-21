@@ -149,6 +149,6 @@ def checkForWinner(board):
     else:
         return 'tie'
 
-if __name__ == '__main__':
-    main()
+# if __name__ == '__main__':
+#     main()
     

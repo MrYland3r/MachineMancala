@@ -1,51 +1,22 @@
-import sys
 import time
 from mancala import (
     getNewBoard, makeMove, checkForWinner, displayBoard,
-    PLAYER_1_PITS, PLAYER_2_PITS
+    PLAYER_1_PITS, PLAYER_2_PITS, askForPlayerMove
 )
-
-from sarsa import SARSAAgent 
+from sarsa import SARSAAgent
 
 PIT_ORDER = ['A', 'B', 'C', 'D', 'E', 'F', '1', 'L', 'K', 'J', 'I', 'H', 'G', '2']
 
-def ask_for_player_move(player, board):
-    pits = PLAYER_1_PITS if player == '1' else PLAYER_2_PITS
-    while True:
-        move = input(f"Your move (Player {player}) {pits} or QUIT: ").upper().strip()
-        if move == 'QUIT':
-            print("Thanks for playing!")
-            sys.exit()
-        if move not in pits:
-            print("Invalid pit. Choose one on your side.")
-            continue
-        if board[move] == 0:
-            print("That pit is empty. Try again.")
-            continue
-        return move
-
-
 def main():
     print("Welcome to Mancala: Play against SARSA AI!")
-
-    while True:
-        try:
-            num_episodes = int(input("How many episodes should the AI train for before playing? (e.g. 5000): "))
-            break
-        except ValueError:
-            print("Please enter a valid integer.")
-
     human = ''
     while human not in ['1', '2']:
         human = input("Choose your side: Player 1 or 2? (Enter 1 or 2): ").strip()
 
     ai = '2' if human == '1' else '1'
 
-    print(f"Training SARSA AI for {num_episodes} episodes...")
-    agent = SARSAAgent()
-    agent.train(num_episodes)
-
-    print("Training complete. Starting game!")
+    # Load pretrained AI Q-table
+    agent = SARSAAgent(q_table_file='qtable-200k.pkl', load_existing=True)
 
     board = getNewBoard()
     player_turn = '1'
@@ -55,7 +26,7 @@ def main():
         displayBoard(board)
 
         if player_turn == human:
-            move = ask_for_player_move(player_turn, board)
+            move = askForPlayerMove(player_turn, board)
         else:
             print(f"SARSA AI ({ai}) is thinking...")
             time.sleep(1)

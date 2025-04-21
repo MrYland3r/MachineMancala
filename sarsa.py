@@ -1,28 +1,22 @@
 import numpy as np
 import random
-import time
 import pickle
+import os
 from mancala import getNewBoard, makeMove, checkForWinner, PLAYER_1_PITS, PLAYER_2_PITS, OPPOSITE_PIT
-
 
 PIT_ORDER = ['A', 'B', 'C', 'D', 'E', 'F', '1', 'L', 'K', 'J', 'I', 'H', 'G', '2']
 PLAYER_1_STORE = '1'
 PLAYER_2_STORE = '2'
 
 class SARSAAgent:
-    def __init__(self, alpha=0.1, gamma=0.95, epsilon=0.1, use_greedy_opponent=False, q_table_file='qtable.pkl'):
+    def __init__(self, alpha=0.1, gamma=0.95, epsilon=0.1,
+                 use_greedy_opponent=True, q_table_file='qtable-200k.pkl', load_existing=True):
         self.alpha = alpha
         self.gamma = gamma
         self.epsilon = epsilon
         self.use_greedy_opponent = use_greedy_opponent
         self.q_table_file = q_table_file
-        self.q_table = self.load_q_table() or {}
-        self.stats = {
-            'episode_rewards': [],
-            'episode_lengths': [],
-            'win_rates': [],
-            'execution_times': []
-        }
+        self.q_table = {} if not load_existing else self.load_q_table() or {}
 
     def epsilon_greedy(self, state, actions):
         if random.random() < self.epsilon:
@@ -36,16 +30,6 @@ class SARSAAgent:
     def reset_game(self):
         board = getNewBoard()
         return board, self.get_state(board)
-
-    def random_move(self, board, pits):
-        valid = [p for p in pits if board[p] > 0]
-        return random.choice(valid) if valid else None
-
-    def greedy_move(self, board, pits):
-        valid = [p for p in pits if board[p] > 0]
-        if not valid:
-            return None
-        return max(valid, key=lambda p: board[p])
 
     def opponent_move(self, board, pits):
         valid = [p for p in pits if board[p] > 0]
@@ -65,12 +49,11 @@ class SARSAAgent:
             pickle.dump(self.q_table, f)
 
     def train(self, episodes):
-        wins = 0
         epsilon_decay = 0.9995
         epsilon_min = 0.01
+        wins = 0
 
         for ep in range(episodes):
-            ep_start = time.time()
             board, state = self.reset_game()
             player_turn = '1'
             done = False
@@ -81,9 +64,7 @@ class SARSAAgent:
 
             if ep > 100:
                 self.epsilon = max(self.epsilon * epsilon_decay, epsilon_min)
-                self.alpha *= 0.999
-                if self.alpha < 0.01:
-                    self.alpha = 0.01
+                self.alpha = max(self.alpha * 0.999, 0.01)
 
             while not done:
                 state_key = tuple(board[p] for p in PIT_ORDER)
@@ -94,23 +75,20 @@ class SARSAAgent:
                 seen_states.add(state_key)
 
                 if player_turn == '1':
-                    valid_moves = sorted([p for p in PLAYER_1_PITS if board[p] > 0], key=lambda x: board[x], reverse=True)
+                    valid_moves = [p for p in PLAYER_1_PITS if board[p] > 0]
                     if not valid_moves:
                         reward = -10
                         total_reward += reward
                         done = True
                         break
 
-                    prev_diff = int(board[PLAYER_1_STORE]) - int(board[PLAYER_2_STORE])
+                    prev_diff = board[PLAYER_1_STORE] - board[PLAYER_2_STORE]
                     action = self.epsilon_greedy(state, valid_moves)
                     next_turn, next_board = makeMove(board.copy(), '1', action)
                     next_state = self.get_state(next_board)
 
-                    new_diff = int(next_board[PLAYER_1_STORE]) - int(next_board[PLAYER_2_STORE])
-                    if steps > 10:
-                        shaping = 1 if new_diff > prev_diff else -1 if new_diff < prev_diff else 0
-                    else:
-                        shaping = 0
+                    new_diff = next_board[PLAYER_1_STORE] - next_board[PLAYER_2_STORE]
+                    shaping = 1 if new_diff > prev_diff else -1 if new_diff < prev_diff else 0
                     reward = shaping
 
                     if board[action] == 1 and OPPOSITE_PIT.get(action) in PLAYER_2_PITS and board[OPPOSITE_PIT[action]] > 0:
@@ -123,10 +101,13 @@ class SARSAAgent:
 
                     winner = checkForWinner(next_board)
                     if winner != 'no winner':
-                        final_reward = 10 if winner == '1' else -10 if winner == '2' else 0
+                        if winner == '1':
+                            final_reward = 20
+                        elif winner == '2':
+                            final_reward = -20
+                        else:
+                            final_reward = 0
                         reward += final_reward
-                        if steps < 15:
-                            reward = 0
                         total_reward += reward
                         q_val = self.q_table.get((state, action), 0)
                         self.q_table[(state, action)] = q_val + self.alpha * (reward - q_val)
@@ -155,30 +136,28 @@ class SARSAAgent:
 
                     winner = checkForWinner(board)
                     if winner != 'no winner':
-                        reward = 10 if winner == '1' else -10 if winner == '2' else 0
-                        if steps < 15:
-                            reward = 0
+                        if winner == '1':
+                            final_reward = 20
+                        elif winner == '2':
+                            final_reward = -20
+                        else:
+                            final_reward = 0
+                        reward = final_reward
                         total_reward += reward
                         if action is not None:
                             q_val = self.q_table.get((state, action), 0)
                             self.q_table[(state, action)] = q_val + self.alpha * (reward - q_val)
-                            if winner == '1':
-                                wins += 1
+                        if winner == '1':
+                            wins += 1
                         done = True
                         break
 
                 steps += 1
 
-            ep_end = time.time()
-            self.stats['episode_rewards'].append(total_reward)
-            self.stats['episode_lengths'].append(steps)
-            self.stats['win_rates'].append(wins / (ep + 1))
-            self.stats['execution_times'].append(ep_end - ep_start)
-
-            print(f"Ep {ep+1} | Reward: {total_reward:.2f} | Steps: {steps} | Win Rate: {wins / (ep + 1):.2f} | Time: {ep_end - ep_start:.2f}s")
-
+            
         self.save_q_table()
 
-if __name__ == "__main__":
-    agent = SARSAAgent(use_greedy_opponent=True)
-    agent.train(8000)
+
+if __name__ == '__main__':
+    agent = SARSAAgent(q_table_file='qtable-200k.pkl', load_existing=False)
+    agent.train(200000)
