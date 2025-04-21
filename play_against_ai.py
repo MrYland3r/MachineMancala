@@ -15,8 +15,8 @@ def main():
 
     ai = '2' if human == '1' else '1'
 
-    # Load pretrained AI Q-table
     agent = SARSAAgent(q_table_file='qtable-200k.pkl', load_existing=True)
+    agent.epsilon = 0.0 
 
     board = getNewBoard()
     player_turn = '1'
