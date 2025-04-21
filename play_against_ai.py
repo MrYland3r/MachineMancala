@@ -39,7 +39,7 @@ def main():
             move = agent.epsilon_greedy(state, valid_moves)
             print(f"SARSA AI chooses: {move}")
 
-        player_turn, board = makeMove(board, player_turn, move)
+        player_turn = makeMove(board, player_turn, move)
 
         winner = checkForWinner(board)
         if winner in ['1', '2', 'tie']:
