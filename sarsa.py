@@ -160,4 +160,4 @@ class SARSAAgent:
 
 if __name__ == '__main__':
     agent = SARSAAgent(q_table_file='qtable-200k.pkl', load_existing=False)
-    agent.train(200000)
+    agent.train(8000)
