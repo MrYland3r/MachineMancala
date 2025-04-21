@@ -16,12 +16,12 @@ Next, make sure to clone this repo locally:
 git clone https://github.com/MrYland3r/MachineMancala.git
 ```
 
-Afterwards, install the following python libraries: (update over time)
+Afterwards, install the following python library:
 
-- 1
-- 2
-- 3
-- 4
+```sh
+pip install numpy
+```
+
 
 Created by:
 
