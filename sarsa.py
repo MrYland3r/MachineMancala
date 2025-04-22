@@ -1,7 +1,6 @@
 import numpy as np
 import random
 import pickle
-import os
 from mancala import getNewBoard, makeMove, checkForWinner, PLAYER_1_PITS, PLAYER_2_PITS, OPPOSITE_PIT
 
 PIT_ORDER = ['A', 'B', 'C', 'D', 'E', 'F', '1', 'L', 'K', 'J', 'I', 'H', 'G', '2']
@@ -17,6 +16,7 @@ class SARSAAgent:
         self.use_greedy_opponent = use_greedy_opponent
         self.q_table_file = q_table_file
         self.q_table = {} if not load_existing else self.load_q_table() or {}
+        print(f"[DEBUG] Q-table after init: {len(self.q_table)} entries")
 
     def epsilon_greedy(self, state, actions):
         if random.random() < self.epsilon:
@@ -40,8 +40,14 @@ class SARSAAgent:
     def load_q_table(self):
         try:
             with open(self.q_table_file, 'rb') as f:
-                return pickle.load(f)
+                q = pickle.load(f)
+                print(f"[INFO] Loaded Q-table with {len(q)} entries from '{self.q_table_file}'")
+                return q
         except FileNotFoundError:
+            print(f"[WARNING] Q-table file '{self.q_table_file}' not found.")
+            return None
+        except Exception as e:
+            print(f"[ERROR] Failed to load Q-table: {e}")
             return None
 
     def save_q_table(self):
@@ -154,7 +160,6 @@ class SARSAAgent:
 
                 steps += 1
 
-            
         self.save_q_table()
 
 

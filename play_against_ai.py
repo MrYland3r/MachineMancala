@@ -16,6 +16,7 @@ def main():
     ai = '2' if human == '1' else '1'
 
     agent = SARSAAgent(q_table_file='qtable-200k.pkl', load_existing=True)
+    print(f"[MAIN DEBUG] Q-table loaded with {len(agent.q_table)} entries.")
     agent.epsilon = 0.0 
 
     board = getNewBoard()
