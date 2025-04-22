@@ -3,7 +3,6 @@ import torch.nn as nn
 import torch.optim as optim
 import random
 import argparse
-import os
 from mancala import (
     getNewBoard, makeMove, checkForWinner,
     PLAYER_1_PITS, PLAYER_2_PITS
@@ -11,6 +10,7 @@ from mancala import (
 
 PIT_ORDER = ['A', 'B', 'C', 'D', 'E', 'F', '1', 'L', 'K', 'J', 'I', 'H', 'G', '2']
 
+# Deep Q Network
 class QNetwork(nn.Module):
     def __init__(self, input_dim=14, output_dim=6):
         super(QNetwork, self).__init__()
@@ -42,14 +42,6 @@ class DeepSARSAAgent:
         self.optimizer = optim.Adam(self.model.parameters(), lr=self.alpha)
         self.criterion = nn.MSELoss()
 
-        self.model_path = f'deep_qmodel_p{player}.pt'
-        if os.path.exists(self.model_path):
-            self.model.load_state_dict(torch.load(self.model_path))
-            print(f"[INFO] Loaded model from {self.model_path}")
-
-        self.total_wins = 0
-        self.total_games = 0
-
     def get_state_vector(self, board):
         return torch.FloatTensor([board[p] for p in PIT_ORDER])
 
@@ -58,24 +50,21 @@ class DeepSARSAAgent:
         valid_moves = [i for i, p in enumerate(self.pits) if board[p] > 0]
         if not valid_moves:
             return None
+
         if random.random() < self.epsilon:
             return random.choice(valid_moves)
+
         with torch.no_grad():
             q_values = self.model(state_vec)
             mask = torch.tensor([float('-inf') if i not in valid_moves else 0.0 for i in range(6)])
             q_values += mask
             return torch.argmax(q_values).item()
 
-    def calculate_reward(self, board, next_board):
-        before = next_board[self.store] - next_board['2' if self.store == '1' else '1']
-        after = board[self.store] - board['2' if self.store == '1' else '1']
-        return 1 if before > after else -1 if before < after else 0
-
     def train(self, episodes):
         for ep in range(1, episodes + 1):
             board = getNewBoard()
-            state = self.get_state_vector(board)
             player_turn = '1'
+            state = self.get_state_vector(board)
             action_idx = self.select_action(board)
 
             while True:
@@ -92,18 +81,17 @@ class DeepSARSAAgent:
 
                 move = self.pits[action_idx]
                 player_turn, next_board = makeMove(board.copy(), self.player, move)
-
                 reward = self.calculate_reward(board, next_board)
+
                 next_state = self.get_state_vector(next_board)
                 next_action_idx = self.select_action(next_board)
 
                 q_values = self.model(state)
                 q_next = self.model(next_state)
-                target = q_values.clone()
 
-                winner = checkForWinner(next_board)
-                if winner != 'no winner':
-                    reward += 20 if winner == self.player else -20
+                target = q_values.clone()
+                if checkForWinner(next_board) != 'no winner':
+                    reward += 20 if checkForWinner(next_board) == self.player else -20
                     target[action_idx] = reward
                 else:
                     target[action_idx] = reward + self.gamma * q_next[next_action_idx].item()
@@ -117,10 +105,7 @@ class DeepSARSAAgent:
                 state = next_state
                 action_idx = next_action_idx
 
-                if winner != 'no winner':
-                    if winner == self.player:
-                        self.total_wins += 1
-                    self.total_games += 1
+                if checkForWinner(board) != 'no winner':
                     break
 
             if ep > 100:
@@ -129,18 +114,35 @@ class DeepSARSAAgent:
             if ep % 1000 == 0:
                 print(f"[TRAIN] Episode {ep}/{episodes} | Epsilon: {self.epsilon:.4f}")
 
-        torch.save(self.model.state_dict(), self.model_path)
-        print(f"[DONE] Training complete for Player {self.player}.")
-        print(f"[RESULT] Wins: {self.total_wins}/{self.total_games} ({(self.total_wins / self.total_games) * 100:.2f}%)")
-        print(f"[SAVE] Model saved to {self.model_path}")
+        self.save_model()
+
+    def calculate_reward(self, board, next_board):
+        before = next_board[self.store] - next_board['2' if self.store == '1' else '1']
+        after = board[self.store] - board['2' if self.store == '1' else '1']
+        return 1 if before > after else -1 if before < after else 0
+
+    def save_model(self, path=None):
+        path = path or f"deep_sarsa_p{self.player}.pt"
+        torch.save(self.model.state_dict(), path)
+        print(f"[SAVE] Model saved to {path}")
+
+    def load_model(self, path=None):
+        path = path or f"deep_sarsa_p{self.player}.pt"
+        self.model.load_state_dict(torch.load(path))
+        self.model.eval()
+        print(f"[LOAD] Model loaded from {path}")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--player', type=str, choices=['1', '2'], required=True)
     parser.add_argument('--episodes', type=int, default=100000)
     parser.add_argument('--epsilon', type=float, default=0.1)
-    parser.add_argument('--lr', type=float, default=0.001)
+    parser.add_argument('--alpha', type=float, default=0.001)
     args = parser.parse_args()
 
-    agent = DeepSARSAAgent(player=args.player, epsilon=args.epsilon, alpha=args.lr)
+    agent = DeepSARSAAgent(
+        player=args.player,
+        epsilon=args.epsilon,
+        alpha=args.alpha
+    )
     agent.train(episodes=args.episodes)
