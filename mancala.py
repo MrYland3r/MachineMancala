@@ -34,7 +34,7 @@ def main():
     while True:
         print('\n' * 60)
         displayBoard(gameBoard)
-        playerMove = askForPlayerMove(playerTurn, gameBoard)
+        playerMove = askForPlayerMove(playerTurn,gameBoard)
         playerTurn = makeMove(gameBoard, playerTurn, playerMove)
 
         winner = checkForWinner(gameBoard)
@@ -44,7 +44,6 @@ def main():
             print('Player ' + winner + ' has won! Congratulations')
             sys.exit()
         elif winner == 'tie':
-            print('\nFinal Board:')
             displayBoard(gameBoard)
             print('There is a tie :0')
             sys.exit()
@@ -54,7 +53,7 @@ def getNewBoard():
     return {'1': 0, '2': 0, 'A': s, 'B': s, 'C': s, 'D': s,
             'E': s, 'F': s, 'G': s, 'H': s, 'I': s, 'J': s,
             'K': s, 'L': s}
-
+  
 def displayBoard(board):
     seedAmounts = [str(board[p]).rjust(2) for p in 'GHIJKL21ABCDEF']
     print("""
@@ -95,8 +94,8 @@ def makeMove(board, playerTurn, pit):
         pit = NEXT_PIT[pit]
         if (playerTurn == '1' and pit == '2') or (playerTurn == '2' and pit == '1'):
             continue
-        board[pit] += 1
-        seedsToSow -= 1
+        board[pit] += 1 
+        seedsToSow -= 1 
 
     # Extra turn if ending in own store
     if (playerTurn == '1' and pit == '1') or (playerTurn == '2' and pit == '2'):
@@ -124,21 +123,22 @@ def checkForWinner(board):
 
     if player1Total == 0:
         board['2'] += player2Total
-        for p in PLAYER_2_PITS:
-            board[p] = 0
+        for pit in PLAYER_2_PITS:
+            board[pit] = 0
     elif player2Total == 0:
         board['1'] += player1Total
-        for p in PLAYER_1_PITS:
-            board[p] = 0
+        for pit in PLAYER_1_PITS:
+            board[pit] = 0
     else:
         return 'no winner'
 
     if board['1'] > board['2']:
         return '1'
-    elif board['2'] > board['1']:
+    elif board['1'] < board['2']:
         return '2'
     else:
         return 'tie'
 
 if __name__ == '__main__':
     main()
+    
