@@ -55,15 +55,14 @@ class SARSAAgent:
             pickle.dump(self.q_table, f)
 
     def train(self, episodes):
-        epsilon_decay = 0.9995
-        epsilon_min = 0.01
+        epsilon_decay = 0.9998
+        epsilon_min = 0.05
         wins = 0
 
-        for ep in range(episodes):
+        for ep in range(1, episodes + 1):
             board, state = self.reset_game()
             player_turn = '1'
             done = False
-            steps = 0
             total_reward = 0
             action = None
             seen_states = set()
@@ -75,9 +74,7 @@ class SARSAAgent:
             while not done:
                 state_key = tuple(board[p] for p in PIT_ORDER)
                 if state_key in seen_states:
-                    reward = -10
-                    total_reward += reward
-                    break
+                    total_reward += -0.1  # Penalize loops, but continue
                 seen_states.add(state_key)
 
                 if player_turn == '1':
@@ -107,12 +104,7 @@ class SARSAAgent:
 
                     winner = checkForWinner(next_board)
                     if winner != 'no winner':
-                        if winner == '1':
-                            final_reward = 20
-                        elif winner == '2':
-                            final_reward = -20
-                        else:
-                            final_reward = 0
+                        final_reward = 20 if winner == '1' else -20 if winner == '2' else 0
                         reward += final_reward
                         total_reward += reward
                         q_val = self.q_table.get((state, action), 0)
@@ -142,13 +134,7 @@ class SARSAAgent:
 
                     winner = checkForWinner(board)
                     if winner != 'no winner':
-                        if winner == '1':
-                            final_reward = 20
-                        elif winner == '2':
-                            final_reward = -20
-                        else:
-                            final_reward = 0
-                        reward = final_reward
+                        reward = 20 if winner == '1' else -20 if winner == '2' else 0
                         total_reward += reward
                         if action is not None:
                             q_val = self.q_table.get((state, action), 0)
@@ -158,10 +144,12 @@ class SARSAAgent:
                         done = True
                         break
 
-                steps += 1
+            if ep % 10000 == 0:
+                print(f"[TRAIN] Episode {ep}/{episodes} | Q-table size: {len(self.q_table)} | Epsilon: {self.epsilon:.4f}")
 
         self.save_q_table()
-
+        print(f"[DONE] Finished training. Final Q-table size: {len(self.q_table)}")
+        print(f"[STATS] Wins by Player 1: {wins}/{episodes}")
 
 if __name__ == '__main__':
     agent = SARSAAgent(q_table_file='qtable-200k.pkl', load_existing=False)

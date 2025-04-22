@@ -1,28 +1,18 @@
-"""
-Mancala, by Al Sweigart al@inventwithpython.com
-The ancient seed-sowing game.
-This code is available at https://nostarch.com/big-book-small-python-programming
-Tags: large, board game, game, two-player
-
-Modifications may be made for the purpose of this non-profit project to experiment with machine learning in mancala
-"""
-
 import sys
 
 PLAYER_1_PITS = ('A', 'B', 'C', 'D', 'E', 'F')
 PLAYER_2_PITS = ('G', 'H', 'I', 'J', 'K', 'L')
 
-OPPOSITE_PIT = {'A': 'G', 'B': 'H', 'C': 'I', 'D': 'J', 
+OPPOSITE_PIT = {'A': 'G', 'B': 'H', 'C': 'I', 'D': 'J',
                 'E': 'K', 'F': 'L', 'G': 'A', 'H': 'B',
                 'I': 'C', 'J': 'D', 'K': 'E', 'L': 'F'}
 
-NEXT_PIT = {'A': 'B', 'B': 'C', 'C': 'D', 'D': 'E', 
+NEXT_PIT = {'A': 'B', 'B': 'C', 'C': 'D', 'D': 'E',
             'E': 'F', 'F': '1', '1': 'L', 'L': 'K',
             'K': 'J', 'J': 'I', 'I': 'H', 'H': 'G',
             'G': '2', '2': 'A'}
 
 PIT_LABELS = 'ABCDEF1LKJIHG2'
-
 STARTING_SEED_NUMBER = 4
 
 def main():
@@ -34,8 +24,8 @@ def main():
     while True:
         print('\n' * 60)
         displayBoard(gameBoard)
-        playerMove = askForPlayerMove(playerTurn,gameBoard)
-        playerTurn = makeMove(gameBoard, playerTurn, playerMove)
+        playerMove = askForPlayerMove(playerTurn, gameBoard)
+        playerTurn, gameBoard = makeMove(gameBoard, playerTurn, playerMove)
 
         winner = checkForWinner(gameBoard)
         if winner == '1' or winner == '2':
@@ -53,7 +43,7 @@ def getNewBoard():
     return {'1': 0, '2': 0, 'A': s, 'B': s, 'C': s, 'D': s,
             'E': s, 'F': s, 'G': s, 'H': s, 'I': s, 'J': s,
             'K': s, 'L': s}
-  
+
 def displayBoard(board):
     seedAmounts = [str(board[p]).rjust(2) for p in 'GHIJKL21ABCDEF']
     print("""
@@ -94,12 +84,12 @@ def makeMove(board, playerTurn, pit):
         pit = NEXT_PIT[pit]
         if (playerTurn == '1' and pit == '2') or (playerTurn == '2' and pit == '1'):
             continue
-        board[pit] += 1 
-        seedsToSow -= 1 
+        board[pit] += 1
+        seedsToSow -= 1
 
     # Extra turn if ending in own store
     if (playerTurn == '1' and pit == '1') or (playerTurn == '2' and pit == '2'):
-        return playerTurn
+        return playerTurn, board
 
     # Capture logic
     if playerTurn == '1' and pit in PLAYER_1_PITS and board[pit] == 1:
@@ -115,7 +105,8 @@ def makeMove(board, playerTurn, pit):
             board[pit] = 0
             board[oppositePit] = 0
 
-    return '2' if playerTurn == '1' else '1'
+    next_player = '2' if playerTurn == '1' else '1'
+    return next_player, board
 
 def checkForWinner(board):
     player1Total = sum(board[p] for p in PLAYER_1_PITS)
@@ -141,4 +132,3 @@ def checkForWinner(board):
 
 if __name__ == '__main__':
     main()
-    
