@@ -1,6 +1,6 @@
 # MachineMancala
 
-This is a project with the purpose of introducing a model that can learn how to play Mancala over time and get better at it. The code runs in python as a .py program and is currently under development :)
+This is a project with the purpose of introducing a model that can learn how to play Mancala over time and get better at it. The code runs in python as a .py program
 
 ## Development
 
@@ -30,5 +30,3 @@ Created by:
 ## Acknowledgements
 
 Credit for the initial Mancala game code goes to **Al Sweigart al@inventwithpython.com**
-
-hello
