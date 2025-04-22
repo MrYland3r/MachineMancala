@@ -3,46 +3,26 @@ import sys
 PLAYER_1_PITS = ('A', 'B', 'C', 'D', 'E', 'F')
 PLAYER_2_PITS = ('G', 'H', 'I', 'J', 'K', 'L')
 
-OPPOSITE_PIT = {'A': 'G', 'B': 'H', 'C': 'I', 'D': 'J',
-                'E': 'K', 'F': 'L', 'G': 'A', 'H': 'B',
-                'I': 'C', 'J': 'D', 'K': 'E', 'L': 'F'}
+OPPOSITE_PIT = {
+    'A': 'G', 'B': 'H', 'C': 'I', 'D': 'J', 'E': 'K', 'F': 'L',
+    'G': 'A', 'H': 'B', 'I': 'C', 'J': 'D', 'K': 'E', 'L': 'F'
+}
 
-NEXT_PIT = {'A': 'B', 'B': 'C', 'C': 'D', 'D': 'E',
-            'E': 'F', 'F': '1', '1': 'L', 'L': 'K',
-            'K': 'J', 'J': 'I', 'I': 'H', 'H': 'G',
-            'G': '2', '2': 'A'}
+NEXT_PIT = {
+    'A': 'B', 'B': 'C', 'C': 'D', 'D': 'E', 'E': 'F', 'F': '1',
+    '1': 'L', 'L': 'K', 'K': 'J', 'J': 'I', 'I': 'H', 'H': 'G',
+    'G': '2', '2': 'A'
+}
 
-PIT_LABELS = 'ABCDEF1LKJIHG2'
 STARTING_SEED_NUMBER = 4
-
-def main():
-    print('''Welcome to Mancala! Original code by Al Sweigart and adapted for project by MachineMancala development team.''')
-    input('''Press ENTER to begin! ''')
-    gameBoard = getNewBoard()
-    playerTurn = '1'
-
-    while True:
-        print('\n' * 60)
-        displayBoard(gameBoard)
-        playerMove = askForPlayerMove(playerTurn, gameBoard)
-        playerTurn, gameBoard = makeMove(gameBoard, playerTurn, playerMove)
-
-        winner = checkForWinner(gameBoard)
-        if winner == '1' or winner == '2':
-            print('\nFinal Board:')
-            displayBoard(gameBoard)
-            print('Player ' + winner + ' has won! Congratulations')
-            sys.exit()
-        elif winner == 'tie':
-            displayBoard(gameBoard)
-            print('There is a tie :0')
-            sys.exit()
 
 def getNewBoard():
     s = STARTING_SEED_NUMBER
-    return {'1': 0, '2': 0, 'A': s, 'B': s, 'C': s, 'D': s,
-            'E': s, 'F': s, 'G': s, 'H': s, 'I': s, 'J': s,
-            'K': s, 'L': s}
+    return {
+        '1': 0, '2': 0,
+        'A': s, 'B': s, 'C': s, 'D': s, 'E': s, 'F': s,
+        'G': s, 'H': s, 'I': s, 'J': s, 'K': s, 'L': s
+    }
 
 def displayBoard(board):
     seedAmounts = [str(board[p]).rjust(2) for p in 'GHIJKL21ABCDEF']
@@ -131,4 +111,23 @@ def checkForWinner(board):
         return 'tie'
 
 if __name__ == '__main__':
-    main()
+    print("Launching standalone Mancala game...")
+    gameBoard = getNewBoard()
+    playerTurn = '1'
+
+    while True:
+        print('\n' * 60)
+        displayBoard(gameBoard)
+        playerMove = askForPlayerMove(playerTurn, gameBoard)
+        playerTurn, gameBoard = makeMove(gameBoard, playerTurn, playerMove)
+
+        winner = checkForWinner(gameBoard)
+        if winner in ['1', '2']:
+            print('\nFinal Board:')
+            displayBoard(gameBoard)
+            print(f'Player {winner} has won! 🎉')
+            sys.exit()
+        elif winner == 'tie':
+            displayBoard(gameBoard)
+            print("It's a tie!")
+            sys.exit()

@@ -1,0 +1,12 @@
+import pickle
+
+with open('qtable-newp1.pkl', 'rb') as f:
+    q_table = pickle.load(f)
+
+print(f"Q-table entries: {len(q_table)}")
+
+# Show first 5 entries
+for i, (k, v) in enumerate(q_table.items()):
+    print(f"State: {k}...  Action: {k[1]}  Q-value: {v:.2f}")
+    if i >= 4:
+        break
