@@ -1,9 +1,0 @@
-import torch
-from deep_sarsa_agent import QNetwork
-
-model = QNetwork()
-model.load_state_dict(torch.load('deep_qmodel_p1.pt'))
-model.eval()
-
-print(model)  # prints the layer structure
-print(f"Total parameters: {sum(p.numel() for p in model.parameters())}")
