@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-import numpy as np
 import time
 from mancala import (
     getNewBoard, makeMove, checkForWinner, displayBoard,
@@ -46,6 +45,8 @@ class DeepSARSAPlayer:
 
         with torch.no_grad():
             q_values = self.model(state_vec)
+            for i in valid_indices:
+                print(f"  Q({self.pits[i]}) = {q_values[i].item():.2f}")
             mask = torch.tensor([float('-inf') if i not in valid_indices else 0.0 for i in range(6)])
             q_values += mask
             chosen_idx = torch.argmax(q_values).item()
