@@ -21,6 +21,9 @@ Afterwards, install the following python library:
 ```sh
 pip install numpy
 ```
+```sh
+pip install torch
+```
 
 
 Created by:
