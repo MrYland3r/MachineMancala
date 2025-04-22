@@ -9,7 +9,7 @@ PLAYER_2_STORE = '2'
 
 class SARSAAgent:
     def __init__(self, alpha=0.1, gamma=0.95, epsilon=0.1,
-                 use_greedy_opponent=True, q_table_file='qtable-200k.pkl', load_existing=True):
+                 use_greedy_opponent=True, q_table_file='qtable-300k.pkl', load_existing=True):
         self.alpha = alpha
         self.gamma = gamma
         self.epsilon = epsilon
@@ -61,7 +61,8 @@ class SARSAAgent:
 
         for ep in range(1, episodes + 1):
             board, state = self.reset_game()
-            player_turn = '1'
+            player_turn = random.choice(['1', '2'])
+            ai_player = player_turn
             done = False
             total_reward = 0
             action = None
@@ -74,11 +75,15 @@ class SARSAAgent:
             while not done:
                 state_key = tuple(board[p] for p in PIT_ORDER)
                 if state_key in seen_states:
-                    total_reward += -0.1  # Penalize loops, but continue
+                    total_reward += -0.1
                 seen_states.add(state_key)
 
-                if player_turn == '1':
-                    valid_moves = [p for p in PLAYER_1_PITS if board[p] > 0]
+                is_ai_turn = (player_turn == ai_player)
+                store = PLAYER_1_STORE if ai_player == '1' else PLAYER_2_STORE
+                pits = PLAYER_1_PITS if player_turn == '1' else PLAYER_2_PITS
+
+                if is_ai_turn:
+                    valid_moves = [p for p in pits if board[p] > 0]
                     if not valid_moves:
                         reward = -10
                         total_reward += reward
@@ -87,29 +92,29 @@ class SARSAAgent:
 
                     prev_diff = board[PLAYER_1_STORE] - board[PLAYER_2_STORE]
                     action = self.epsilon_greedy(state, valid_moves)
-                    next_turn, next_board = makeMove(board.copy(), '1', action)
+                    next_turn, next_board = makeMove(board.copy(), player_turn, action)
                     next_state = self.get_state(next_board)
 
                     new_diff = next_board[PLAYER_1_STORE] - next_board[PLAYER_2_STORE]
                     shaping = 1 if new_diff > prev_diff else -1 if new_diff < prev_diff else 0
                     reward = shaping
 
-                    if board[action] == 1 and OPPOSITE_PIT.get(action) in PLAYER_2_PITS and board[OPPOSITE_PIT[action]] > 0:
+                    if board[action] == 1 and OPPOSITE_PIT.get(action) in (PLAYER_2_PITS if ai_player == '1' else PLAYER_1_PITS) and board[OPPOSITE_PIT[action]] > 0:
                         reward += 2
-                    if next_turn == '1' and action == PLAYER_1_STORE:
+                    if next_turn == ai_player and action == store:
                         reward += 1
 
-                    next_valid_moves = [p for p in PLAYER_1_PITS if next_board[p] > 0]
+                    next_valid_moves = [p for p in pits if next_board[p] > 0]
                     next_action = self.epsilon_greedy(next_state, next_valid_moves) if next_valid_moves else action
 
                     winner = checkForWinner(next_board)
                     if winner != 'no winner':
-                        final_reward = 20 if winner == '1' else -20 if winner == '2' else 0
+                        final_reward = 20 if winner == ai_player else -20 if winner != 'tie' else 0
                         reward += final_reward
                         total_reward += reward
                         q_val = self.q_table.get((state, action), 0)
                         self.q_table[(state, action)] = q_val + self.alpha * (reward - q_val)
-                        if winner == '1':
+                        if winner == ai_player:
                             wins += 1
                         done = True
                         break
@@ -125,21 +130,21 @@ class SARSAAgent:
                     total_reward += reward
 
                 else:
-                    valid_moves = [p for p in PLAYER_2_PITS if board[p] > 0]
+                    valid_moves = [p for p in pits if board[p] > 0]
                     if not valid_moves:
                         done = True
                         break
-                    move = self.opponent_move(board, PLAYER_2_PITS)
-                    player_turn, board = makeMove(board, '2', move)
+                    move = self.opponent_move(board, pits)
+                    player_turn, board = makeMove(board, player_turn, move)
 
                     winner = checkForWinner(board)
                     if winner != 'no winner':
-                        reward = 20 if winner == '1' else -20 if winner == '2' else 0
+                        reward = 20 if winner == ai_player else -20 if winner != 'tie' else 0
                         total_reward += reward
                         if action is not None:
                             q_val = self.q_table.get((state, action), 0)
                             self.q_table[(state, action)] = q_val + self.alpha * (reward - q_val)
-                        if winner == '1':
+                        if winner == ai_player:
                             wins += 1
                         done = True
                         break
@@ -149,8 +154,9 @@ class SARSAAgent:
 
         self.save_q_table()
         print(f"[DONE] Finished training. Final Q-table size: {len(self.q_table)}")
-        print(f"[STATS] Wins by Player 1: {wins}/{episodes}")
+        print(f"[STATS] Wins by AI: {wins}/{episodes}")
 
 if __name__ == '__main__':
-    agent = SARSAAgent(q_table_file='qtable-200k.pkl', load_existing=False)
-    agent.train(200000)
+    agent = SARSAAgent(q_table_file='qtable-300k.pkl', load_existing=True)
+    agent.train(200000)  # Add more training on top of current 300k
+
