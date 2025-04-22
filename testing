@@ -1,12 +1,9 @@
-import pickle
+import torch
+from deep_sarsa_agent import QNetwork
 
-with open('qtable-newp2.pkl', 'rb') as f:
-    q_table = pickle.load(f)
+model = QNetwork()
+model.load_state_dict(torch.load('deep_qmodel_p1.pt'))
+model.eval()
 
-print(f"Q-table entries: {len(q_table)}")
-
-# Show first 5 entries
-for i, (k, v) in enumerate(q_table.items()):
-    print(f"State: {k}...  Action: {k[1]}  Q-value: {v:.2f}")
-    if i >= 100:
-        break
+print(model)  # prints the layer structure
+print(f"Total parameters: {sum(p.numel() for p in model.parameters())}")

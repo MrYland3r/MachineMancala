@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import numpy as np
 import time
 from mancala import (
     getNewBoard, makeMove, checkForWinner, displayBoard,
@@ -8,7 +9,6 @@ from mancala import (
 
 PIT_ORDER = ['A', 'B', 'C', 'D', 'E', 'F', '1', 'L', 'K', 'J', 'I', 'H', 'G', '2']
 
-# Deep Q Network (same as in training)
 class QNetwork(nn.Module):
     def __init__(self, input_dim=14, output_dim=6):
         super(QNetwork, self).__init__()
@@ -23,31 +23,33 @@ class QNetwork(nn.Module):
     def forward(self, x):
         return self.net(x)
 
-class DeepQAgent:
-    def __init__(self, player, model_path):
+class DeepSARSAPlayer:
+    def __init__(self, player):
         assert player in ['1', '2']
         self.player = player
         self.pits = PLAYER_1_PITS if player == '1' else PLAYER_2_PITS
+        self.model_path = f'deep_sarsa_p{player}.pt'
 
         self.model = QNetwork()
-        self.model.load_state_dict(torch.load(model_path))
+        self.model.load_state_dict(torch.load(self.model_path))
         self.model.eval()
-        print(f"[INFO] Loaded Deep SARSA model from {model_path}")
+        print(f"[INFO] Loaded trained model for Player {player} from {self.model_path}")
 
     def get_state_vector(self, board):
         return torch.FloatTensor([board[p] for p in PIT_ORDER])
 
     def choose_action(self, board):
         state_vec = self.get_state_vector(board)
-        valid_moves = [i for i, p in enumerate(self.pits) if board[p] > 0]
-        if not valid_moves:
+        valid_indices = [i for i, p in enumerate(self.pits) if board[p] > 0]
+        if not valid_indices:
             return None
 
         with torch.no_grad():
             q_values = self.model(state_vec)
-            mask = torch.tensor([float('-inf') if i not in valid_moves else 0.0 for i in range(6)])
+            mask = torch.tensor([float('-inf') if i not in valid_indices else 0.0 for i in range(6)])
             q_values += mask
-            return self.pits[torch.argmax(q_values).item()]
+            chosen_idx = torch.argmax(q_values).item()
+            return self.pits[chosen_idx]
 
 def main():
     print("Welcome to Mancala: Play against Deep SARSA AI!")
@@ -56,8 +58,7 @@ def main():
         human = input("Choose your side: Player 1 or 2? (Enter 1 or 2): ").strip()
 
     ai = '2' if human == '1' else '1'
-    model_path = f"checkpoints/deep_sarsa_p{ai}_latest.pt"
-    agent = DeepQAgent(player=ai, model_path=model_path)
+    agent = DeepSARSAPlayer(player=ai)
 
     board = getNewBoard()
     player_turn = '1'
@@ -83,11 +84,9 @@ def main():
         if winner in ['1', '2', 'tie']:
             print('\nFinal Board:')
             displayBoard(board)
-            if winner == 'tie':
-                print("It's a tie!")
-            else:
-                print(f"Player {winner} wins!")
+            print("It's a tie!" if winner == 'tie' else f"Player {winner} wins!")
             break
 
 if __name__ == '__main__':
+    torch.manual_seed(42)
     main()
