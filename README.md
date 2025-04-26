@@ -24,7 +24,7 @@ pip install numpy
 ```sh
 pip install torch
 ```
-##Files
+## Files
 deep_sarsa_agent.py - A neural network version of SARSA (State Action Rewards State Action) algorithm. It is trained off simulations of the mancala game.
 
 deep_sarsa_p1.pt - Contains the training data (saved weight and biases) of the deep sarsa player playing as player 1
