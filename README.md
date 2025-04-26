@@ -25,11 +25,6 @@ pip install numpy
 pip install torch
 ```
 
-
-Created by:
-
-<a href= "https://github.com/MrYland3r/MachineMancala/graphs/contributors"> <img src= "https://contrib.rocks/image?repo=MrYland3r/MachineMancala" /></a>
-
 ## Acknowledgements
 
 Credit for the initial Mancala game code goes to **Al Sweigart al@inventwithpython.com**
