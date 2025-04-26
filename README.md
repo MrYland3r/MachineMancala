@@ -37,6 +37,12 @@ mancala.py - The base mancala game itself (capture gamemode). It is text-based w
 
 play_against_deep_sarsa.py - It is where the user can choose to play as player 1 or 2, and they can play against the deep sarsa player. The deep sarsa player also continously learns from every game.
 
+## How to Play
+
+If you want to play against the trained model, make sure to run
+```sh
+python play_against_deep_sarsa.py
+```
 
 ## Acknowledgements
 
